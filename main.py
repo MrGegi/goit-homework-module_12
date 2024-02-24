@@ -1,6 +1,7 @@
 from collections import UserDict
 from datetime import date
 from datetime import datetime
+import pickle
 
 class AddressBook(UserDict):
     def __init__(self):
@@ -39,7 +40,8 @@ class AddressBook(UserDict):
             raise StopIteration
 
         return self.current_page
-        
+    
+       
 
 class Record():
     def __init__(self, name):
@@ -78,7 +80,7 @@ class Name(Field):
     @value.setter
     def value(self, value):
         if value.isalpha():
-            print('All good, name contains letters only.')
+            # print('All good, name contains letters only.')
             self.__value = value
         else:
             print('Name can only contain letters.')
@@ -124,9 +126,9 @@ class Birthday(Field):
     def birthdate(self, birthdate):
         if isinstance(birthdate, date):
             self.__birthdate = birthdate
-            print('date works')
+            # print('date works')
         else:
-            print(type(date))
+            # print(type(date))
             raise Exception('Wrong date format')
 
 address_book = AddressBook()
@@ -235,7 +237,6 @@ def show_page(user_input):
         print('|{:^30}|'.format('-----End of Page-----'))
         input('Press enter to continue')
 
-
 def show_all(user_input):
     print('|{:^30}|'.format('-----All contacts-----'))
     for contact_name, contact_record in address_book.contacts.items():        
@@ -255,6 +256,20 @@ def set_page_size(user_input):
     address_book.records_per_page = counter
     print(f'Records per page set to {address_book.records_per_page}')
 
+def find(user_input):
+    phrase_to_look_for = user_input.split(' ')[1]
+    print('|{:^30}|'.format('-----Found contacts-----'))
+    ppl_found = []
+    for contact_name, contact_record in address_book.contacts.items():
+        if phrase_to_look_for in contact_name:
+            ppl_found.append(contact_name)
+            continue
+        for phone_number in contact_record.phone_list:
+            if phrase_to_look_for in str(phone_number.value):
+               ppl_found.append(contact_name)
+               break
+    print(ppl_found)
+
 def unknown_command(user_input):
     print('Unknown command')
 
@@ -269,6 +284,7 @@ def help(user_input):
     print('show birthday NAME')
     print('show all')
     print('set page size NUMBER')
+    print('find NAME/NUMBER')
 
 COMMANDS = {
     'hello': hello,
@@ -286,6 +302,7 @@ COMMANDS = {
     'show page': show_page,
     'show all': show_all,
     'set page size': set_page_size,
+    'find': find,
     'help': help
 }
 
@@ -298,20 +315,38 @@ def get_handler(user_input):
             continue
     return unknown_command #if there was no match it returns 'unknown command'
 
+def save_to_file():
+    book_coded = pickle.dumps(address_book)
+    with open('book.txt', 'wb') as fh:
+        fh.write(book_coded)
+        print('saved')
+
+def read_from_file():
+    global address_book
+    try:
+        with open('book.txt', 'rb') as fh:
+            book_uncoded = fh.read()
+            address_book = pickle.loads(book_uncoded)
+            print('file was read')
+    except:
+        return
+
 def main():
     print('Type "help" to learn about commands')
+    read_from_file()
     while True:
         user_input = input('Enter your next command: ')
         handler = get_handler(user_input)
         handler(user_input)
+        save_to_file()
 
 
 
 if __name__ == '__main__':
     add_contact('add contact Marika')
     add_birthday('add birthday Marika 1990 05 20')
-    add_phone('add phone Marika 123321')
+    add_phone('add phone Marika 123')
     add_contact('add contact Zbigniew')
-    add_phone('add phone Zbigniew 1321231')
+    add_phone('add phone Zbigniew 456')
     add_contact('add contact Rychu')
     main()
